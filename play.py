@@ -6,7 +6,7 @@ For all the options run
 python play.py -h
 """
 
-#boooooom
+#boooooom booo
 
 from argparse import ArgumentParser
 import sys
