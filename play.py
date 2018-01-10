@@ -6,7 +6,7 @@ For all the options run
 python play.py -h
 """
 
-#Add me to repppp
+#boooooom
 
 from argparse import ArgumentParser
 import sys
