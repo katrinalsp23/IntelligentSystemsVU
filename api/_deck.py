@@ -167,8 +167,8 @@ class Deck:
 		self.__trick = [None, None]
 
 
-	#Look into overloading this function as well
-	# Generates a new deck based on a seed. If no seed is given, a random seed in generated.
+	# Look into overloading this function as well TODO maybe
+	# Generates a new deck based on a seed. If no seed is given, a random seed is generated.
 	@staticmethod
 	def generate(id=None):
 		
