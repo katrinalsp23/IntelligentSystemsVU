@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--max-time",
                         dest="max_time",
                         help="maximum amount of time allowed per turn in seconds (default: 5)",
-                        type=int, default=5)
+                        type=int, default=5000)
 
     parser.add_argument("-q", "--quiet", dest="quiet",
                         help="Whether to hide the printed output.",
