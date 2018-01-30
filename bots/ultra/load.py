@@ -1,7 +1,8 @@
 from kb import KB, Boolean, Integer
 
-# Initialise all variables that you need for you strategies and game knowledge.
-# Add those variables here.. The following list is complete for the Play Jack strategy.
+# The variables initialized below need to be initialized to use different strategies. We can reduce these variables
+# if we plan to use a strategy where all of them are not being used.
+
 A0 = Boolean('a0')
 T0 = Boolean('t0')
 K0 = Boolean('k0')
@@ -124,38 +125,16 @@ PC17 = Boolean('pc17')
 PC18 = Boolean('pc18')
 PC19 = Boolean('pc19')
 
-def general_information(kb):
-    print("hey")
-    # GENERAL INFORMATION ABOUT THE CARDS
-    # This adds information which cards are Jacks
-    # # kb.add_clause(A0)
-    # # kb.add_clause(T1)
-    # kb.add_clause(K2)
-    # kb.add_clause(Q3)
-    # kb.add_clause(J4)
-    # # kb.add_clause(A5)
-    # # kb.add_clause(T6)
-    # kb.add_clause(K7)
-    # kb.add_clause(Q8)
-    # kb.add_clause(J9)
-    # # kb.add_clause(A10)
-    # # kb.add_clause(T11)
-    # kb.add_clause(K12)
-    # kb.add_clause(Q13)
-    # kb.add_clause(J14)
-    # # kb.add_clause(A15)
-    # # kb.add_clause(T16)
-    # kb.add_clause(K17)
-    # kb.add_clause(Q18)
-    # kb.add_clause(J19)
-
     # Add here whatever is needed for your strategy.
 
 def strategy_knowledge(kb):
-    # DEFINITION OF THE STRATEGY
-    # Add clauses (This list is sufficient for this strategy)
-    # PJ is the strategy to play jacks first, so all we need to model is all x PJ(x) <-> J(x),
-    # In other words that the PJ strategy should play a card when it is a jack
+    """This is the play highest card strategy. This is what this strategy does:
+
+    "Try to play a card of the suit given that all the cards of the same suit having higher value than this card have
+    already been played.For example, if we have a King of Clubs, we play that card if and only if 10 and Ace of Clubs
+    have been played."
+
+    """
     kb.add_clause(~PC4, Q3, K2, T1, A0)
     kb.add_clause(PC4, ~Q3, ~K2, ~T1, ~A0)
     kb.add_clause(~PC9, Q8, K7, T6, A5)
