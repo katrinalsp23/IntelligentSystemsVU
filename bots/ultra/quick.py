@@ -76,7 +76,7 @@ class Bot:
                     return move
 
             # We compare the bot's points with the threshold value and decide on playing hard.
-            if state.get_points(whose_turn) >= 48:
+            if state.get_points(whose_turn) >= 45:
                 for move in moves:
                     if Deck.get_suit(move[0]) == trump_suit:
                         return move
@@ -88,31 +88,30 @@ class Bot:
                     print "Strategy Applied"
                     return move
 
-            if random.randint(1,2) == 1:
-                # We play the highest possible card if none of the cards in hand is entailed by the KB
-                chosen_move = moves[0]
-                for index, move in enumerate(moves):
-                    if move[0] is not None and move[0] % 5 <= chosen_move[0] % 5:
-                        chosen_move = move
+            # Choose this part to play the highest card
+            chosen_move = moves[0]
+            for index, move in enumerate(moves):
+                if move[0] is not None and move[0] % 5 <= chosen_move[0] % 5:
+                    chosen_move = move
 
-                return chosen_move
-            else:
-                # We play the lowest possible card if none of the cards in hand is entailed by the KB
-                lowest_card, _ = moves[0]
-                for move in moves:
-                    candidate_card, _ = move
-                    if candidate_card != None:
-                        if Deck.get_suit(candidate_card) != trump_suit:
-                            if candidate_card % 5 > lowest_card % 5:
-                                lowest_card = candidate_card
+            return chosen_move
 
-                if Deck.get_suit(lowest_card) == trump_suit:
-                    for move in moves:
-                        candidate_card, _ = move
-                        if candidate_card != None:
-                            if candidate_card % 5 > lowest_card % 5:
-                                lowest_card = candidate_card
-                return (lowest_card, None)
+            ## Choose this to play the lowest card
+            # lowest_card, _ = moves[0]
+            # for move in moves:
+            #     candidate_card, _ = move
+            #     if candidate_card != None:
+            #         if Deck.get_suit(candidate_card) != trump_suit:
+            #             if candidate_card % 5 > lowest_card % 5:
+            #                 lowest_card = candidate_card
+            #
+            # if Deck.get_suit(lowest_card) == trump_suit:
+            #     for move in moves:
+            #         candidate_card, _ = move
+            #         if candidate_card != None:
+            #             if candidate_card % 5 > lowest_card % 5:
+            #                 lowest_card = candidate_card
+            # return (lowest_card, None)
 
         else:
             return self.returnMove(state)
@@ -122,8 +121,8 @@ class Bot:
 
         index = move[0]
 
-        if (Deck.get_suit(index) == state.get_trump_suit()):
-            return True
+        # If a card is chosen by the KB, it will be played, doesn't matter if it is a trump
+        # This will be an extremely rare case, possibility of this happening is very low
 
         if (Deck.get_rank(index) == "A"):
             return False
