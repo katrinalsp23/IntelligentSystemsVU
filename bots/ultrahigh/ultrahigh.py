@@ -96,40 +96,22 @@ class Bot:
                     # print "Strategy Applied"
                     return move
 
-            if random.randint(1, 2) == 1:
-                # We play the highest possible card if none of the cards in hand is entailed by the KB
-                highest_card, _ = moves[0]
+            # We play the highest possible card if none of the cards in hand is entailed by the KB
+            highest_card, _ = moves[0]
+            for move in moves:
+                candidate_card, _ = move
+                if candidate_card != None:
+                    if Deck.get_suit(candidate_card) != trump_suit:
+                        if candidate_card % 5 < highest_card % 5:
+                            highest_card = candidate_card
+
+            if Deck.get_suit(highest_card) == trump_suit:
                 for move in moves:
                     candidate_card, _ = move
                     if candidate_card != None:
-                        if Deck.get_suit(candidate_card) != trump_suit:
-                            if candidate_card % 5 < highest_card % 5:
-                                highest_card = candidate_card
-
-                if Deck.get_suit(highest_card) == trump_suit:
-                    for move in moves:
-                        candidate_card, _ = move
-                        if candidate_card != None:
-                            if candidate_card % 5 < highest_card % 5:
-                                highest_card = candidate_card
-                return (highest_card, None)
-            else:
-                # We play the lowest possible card if none of the cards in hand is entailed by the KB
-                lowest_card, _ = moves[0]
-                for move in moves:
-                    candidate_card, _ = move
-                    if candidate_card != None:
-                        if Deck.get_suit(candidate_card) != trump_suit:
-                            if candidate_card % 5 > lowest_card % 5:
-                                lowest_card = candidate_card
-
-                if Deck.get_suit(lowest_card) == trump_suit:
-                    for move in moves:
-                        candidate_card, _ = move
-                        if candidate_card != None:
-                            if candidate_card % 5 > lowest_card % 5:
-                                lowest_card = candidate_card
-                return (lowest_card, None)
+                        if candidate_card % 5 < highest_card % 5:
+                            highest_card = candidate_card
+            return (highest_card, None)
 
         else:
             return self.returnMove(state)

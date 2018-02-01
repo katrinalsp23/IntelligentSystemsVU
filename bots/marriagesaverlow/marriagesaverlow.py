@@ -45,15 +45,12 @@ from bots.ultra import kb
 from kb import KB, Boolean, Integer
 
 kb = KB()
-
+THRESHOLD = 10
 
 class Bot:
     __RANKS = ["a", "t", "k", "q", "j"]
 
-
     def __init__(self):
-        # kb = KB()
-
         pass
 
     def get_move(self, state):
@@ -73,10 +70,24 @@ class Bot:
             # We look for a possible marriage
             for move in moves:
                 if move[1] is not None:
+                    # print("+1")
                     return move
 
+            # If we are in stage 2, we give priority to playing Aces
+            if state.get_phase() == 2:
+                # We try to return a non-trump Ace
+                for move in moves:
+                    if move[0] % 5 == 0 and Deck.get_suit(move[0]) != trump_suit:
+                        return move
+
+                # We try to return any Ace
+                for move in moves:
+                    if move[0] % 5 == 0:
+                        return move
+
+            moves = self.saveMarriage(state)
             # We compare the bot's points with the threshold value and decide on playing hard.
-            if state.get_points(whose_turn) >= 45:
+            if state.get_points(whose_turn) >= 50:
                 for move in moves:
                     if Deck.get_suit(move[0]) == trump_suit:
                         return move
@@ -85,16 +96,25 @@ class Bot:
             random.shuffle(moves)
             for move in moves:
                 if not self.kb_consistent(state, move):
-                    print "Strategy Applied"
+                    # print "Strategy Applied"
                     return move
 
-            # We play the highest possible card if none of the cards in hand is entailed by the KB
-            chosen_move = moves[0]
-            for index, move in enumerate(moves):
-                if move[0] is not None and move[0] % 5 <= chosen_move[0] % 5:
-                    chosen_move = move
+            # We play the lowest possible card if none of the cards in hand is entailed by the KB
+            lowest_card, _ = moves[0]
+            for move in moves:
+                candidate_card, _ = move
+                if candidate_card != None:
+                    if Deck.get_suit(candidate_card) != trump_suit:
+                        if candidate_card % 5 > lowest_card % 5:
+                            lowest_card = candidate_card
 
-            return chosen_move
+            if Deck.get_suit(lowest_card) == trump_suit:
+                for move in moves:
+                    candidate_card, _ = move
+                    if candidate_card != None:
+                        if candidate_card % 5 > lowest_card % 5:
+                            lowest_card = candidate_card
+            return (lowest_card, None)
 
         else:
             return self.returnMove(state)
@@ -116,7 +136,6 @@ class Bot:
 
         variable_string = "pc" + str(index)
         strategy_variable = Boolean(variable_string)
-
         kb.add_clause(~strategy_variable)
 
         return kb.satisfiable()
@@ -126,10 +145,8 @@ class Bot:
 
         for card in state.get_perspective(self):
             index = -1
-            if card == "P1W":
-                index = state.get_perspective(self).index("P1W")
-            if card == "P2W":
-                index = state.get_perspective(self).index("P2W")
+            if card == "P1H" or card == "P2H" or card == "P1W" or card == "P2W":
+                index = state.get_perspective(self).index(card)
 
             if index != -1:
                 tempString = self.__RANKS[index % 5]
@@ -140,7 +157,7 @@ class Bot:
 
 
     def returnMove(self, state):
-        moves = state.moves()
+        moves = self.saveMarriage(state)
         trump_suit = state.get_trump_suit()
 
         played_card = state.get_opponents_played_card()
@@ -172,11 +189,46 @@ class Bot:
                     if candidate_card % 5 < played_card % 5:
                         return (candidate_card, None)
 
-        for move in moves:  # Else try to find a a card from trump suit
-            candidate_card, _ = move
-            if candidate_card != None:
-                if Deck.get_suit(candidate_card) == trump_suit:
-                    return (candidate_card, None)
+        # for move in moves:  # Else try to find a a card from trump suit
+        #     candidate_card, _ = move
+        #     if candidate_card != None:
+        #         if Deck.get_suit(candidate_card) == trump_suit:
+        #             return (candidate_card, None)
+
+        if self.getDifference(state) < THRESHOLD:
+            trump_moves = self.getTrumpMoves(state, moves)
+            if trump_moves:
+                if self.isLow(played_card):
+                    lowest_card, _ = trump_moves[0]
+                    for move in trump_moves:  # Else try to find a a card from trump suit
+                        candidate_card, _ = move
+                        if self.isLow(candidate_card) is True:
+                            if candidate_card % 5 > lowest_card % 5:
+                                lowest_card = candidate_card
+
+                    if self.isLow(lowest_card) is True:
+                        return lowest_card, _
+                else:
+                    if self.isHigh(played_card):
+                        highest_card, _ = trump_moves[0]
+                        for move in trump_moves:  # Else try to find a a card from trump suit
+                            candidate_card, _ = move
+                            if self.isHigh(candidate_card) is True:
+                                if candidate_card % 5 < highest_card % 5:
+                                    highest_card = candidate_card
+
+                        if self.isHigh(highest_card) is True:
+                            return highest_card, _
+        else:
+            trump_moves = self.getTrumpMoves(state, moves)
+            if trump_moves:
+                highest_card, _ = trump_moves[0]
+                for move in trump_moves:  # Else try to find a a card from trump suit
+                    candidate_card, _ = move
+                    if candidate_card % 5 < highest_card % 5:
+                        highest_card = candidate_card
+
+                return highest_card, _
 
         lowest_card, _ = moves[0]
 
@@ -195,3 +247,70 @@ class Bot:
                         lowest_card = candidate_card
 
         return (lowest_card, None)
+
+    def isLow(self, card):
+        if card % 5 > 1:
+            return True
+        else:
+            return False
+
+    def isHigh(self, card):
+        if card % 5 <= 1:
+            return True
+        else:
+            return False
+
+    def isTrump(self, state, card):
+        if Deck.get_suit(card) == state.get_trump_suit():
+            return True
+        else:
+            return False
+
+    def getTrumpMoves(self, state, moves):
+        new_moves = copy.deepcopy(moves)
+        trump_suit = state.get_trump_suit()
+        for move in new_moves:
+            card, _ = move
+            if Deck.get_suit(card) != trump_suit:
+                new_moves.remove(move)
+        return new_moves
+
+    def getDifference(self, state):
+        bot = 0
+        opp = 0
+        if state.whose_turn() is 1:
+            bot = 1
+            opp = 2
+        else:
+            bot = 2
+            opp = 1
+
+        diff = state.get_points(bot) - state.get_points(opp)
+
+        if diff < 0:
+            return abs(diff)
+        else:
+            return 0
+        
+    def saveMarriage(self, state):
+        if state.get_phase() == 2:# or state.get_stock_size() < 6:
+            return state.moves()
+
+        new_moves = copy.deepcopy(state.moves())
+
+        for move in new_moves:
+            card, _ = move
+            if card % 5 == 2: # If a king
+                queen_status = state.get_perspective(state.whose_turn())[card + 1]
+                if queen_status == "H" or queen_status == "U":
+                    new_moves.remove(move)
+
+            if card % 5 == 3:  # If a king
+                king_status = state.get_perspective(state.whose_turn())[card - 1]
+                if king_status == "H" or king_status == "U":
+                    new_moves.remove(move)
+
+        if not new_moves:
+            return state.moves()
+        else:
+            return new_moves

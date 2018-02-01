@@ -45,15 +45,19 @@ from bots.ultra import kb
 from kb import KB, Boolean, Integer
 
 kb = KB()
-THRESHOLD = 10
+
 
 class Bot:
     __RANKS = ["a", "t", "k", "q", "j"]
 
+
     def __init__(self):
+        # kb = KB()
+
         pass
 
     def get_move(self, state):
+        abc = state.get_pending_points()
         whose_turn = state.whose_turn()
         leader = state.leader()
         trump_suit = state.get_trump_suit()
@@ -90,29 +94,21 @@ class Bot:
                     if Deck.get_suit(move[0]) == trump_suit:
                         return move
 
+
             random.shuffle(moves)
             for move in moves:
                 if not self.kb_consistent(state, move):
                     # print "Strategy Applied"
                     return move
 
-            if random.randint(1, 2) == 1:
+            if random.randint(1,2) == 1:
                 # We play the highest possible card if none of the cards in hand is entailed by the KB
-                highest_card, _ = moves[0]
-                for move in moves:
-                    candidate_card, _ = move
-                    if candidate_card != None:
-                        if Deck.get_suit(candidate_card) != trump_suit:
-                            if candidate_card % 5 < highest_card % 5:
-                                highest_card = candidate_card
+                chosen_move = moves[0]
+                for index, move in enumerate(moves):
+                    if move[0] is not None and move[0] % 5 <= chosen_move[0] % 5:
+                        chosen_move = move
 
-                if Deck.get_suit(highest_card) == trump_suit:
-                    for move in moves:
-                        candidate_card, _ = move
-                        if candidate_card != None:
-                            if candidate_card % 5 < highest_card % 5:
-                                highest_card = candidate_card
-                return (highest_card, None)
+                return chosen_move
             else:
                 # We play the lowest possible card if none of the cards in hand is entailed by the KB
                 lowest_card, _ = moves[0]
@@ -142,15 +138,13 @@ class Bot:
         if (Deck.get_suit(index) == state.get_trump_suit()):
             return True
 
-        if (Deck.get_rank(index) == "A"):
-            return False
-
         kb = self.prepareKB(state)
 
         load.strategy_knowledge(kb)
 
         variable_string = "pc" + str(index)
         strategy_variable = Boolean(variable_string)
+
         kb.add_clause(~strategy_variable)
 
         return kb.satisfiable()
@@ -160,8 +154,10 @@ class Bot:
 
         for card in state.get_perspective(self):
             index = -1
-            if card == "P1H" or card == "P2H" or card == "P1W" or card == "P2W":
-                index = state.get_perspective(self).index(card)
+            if card == "P1W":
+                index = state.get_perspective(self).index("P1W")
+            if card == "P2W":
+                index = state.get_perspective(self).index("P2W")
 
             if index != -1:
                 tempString = self.__RANKS[index % 5]
@@ -177,6 +173,7 @@ class Bot:
 
         played_card = state.get_opponents_played_card()
 
+        # If we are past the threshold, reply to a trump with highest trump, else trump with lowest trump
         if Deck.get_suit(played_card) == trump_suit:  # Check if played card is trump
             for move in moves:
                 candidate_card, _ = move
@@ -204,46 +201,11 @@ class Bot:
                     if candidate_card % 5 < played_card % 5:
                         return (candidate_card, None)
 
-        # for move in moves:  # Else try to find a a card from trump suit
-        #     candidate_card, _ = move
-        #     if candidate_card != None:
-        #         if Deck.get_suit(candidate_card) == trump_suit:
-        #             return (candidate_card, None)
-
-        if self.getDifference(state) < THRESHOLD:
-            trump_moves = self.getTrumpMoves(state, moves)
-            if trump_moves:
-                if self.isLow(played_card):
-                    lowest_card, _ = trump_moves[0]
-                    for move in trump_moves:  # Else try to find a a card from trump suit
-                        candidate_card, _ = move
-                        if self.isLow(candidate_card) is True:
-                            if candidate_card % 5 > lowest_card % 5:
-                                lowest_card = candidate_card
-
-                    if self.isLow(lowest_card) is True:
-                        return lowest_card, _
-                else:
-                    if self.isHigh(played_card):
-                        highest_card, _ = trump_moves[0]
-                        for move in trump_moves:  # Else try to find a a card from trump suit
-                            candidate_card, _ = move
-                            if self.isHigh(candidate_card) is True:
-                                if candidate_card % 5 < highest_card % 5:
-                                    highest_card = candidate_card
-
-                        if self.isHigh(highest_card) is True:
-                            return highest_card, _
-        else:
-            trump_moves = self.getTrumpMoves(state, moves)
-            if trump_moves:
-                highest_card, _ = trump_moves[0]
-                for move in trump_moves:  # Else try to find a a card from trump suit
-                    candidate_card, _ = move
-                    if candidate_card % 5 < highest_card % 5:
-                        highest_card = candidate_card
-
-                return highest_card, _
+        for move in moves:  # Else try to find a a card from trump suit
+            candidate_card, _ = move
+            if candidate_card != None:
+                if Deck.get_suit(candidate_card) == trump_suit:
+                    return (candidate_card, None)
 
         lowest_card, _ = moves[0]
 
@@ -262,48 +224,3 @@ class Bot:
                         lowest_card = candidate_card
 
         return (lowest_card, None)
-
-    def isLow(self, card):
-        if card % 5 > 1:
-            return True
-        else:
-            return False
-
-    def isHigh(self, card):
-        if card % 5 <= 1:
-            return True
-        else:
-            return False
-
-    def isTrump(self, state, card):
-        if Deck.get_suit(card) == state.get_trump_suit():
-            return True
-        else:
-            return False
-
-    def getTrumpMoves(self, state, moves):
-        new_moves = copy.deepcopy(moves)
-        trump_suit = state.get_trump_suit()
-        for move in new_moves:
-            card, _ = move
-            if Deck.get_suit(card) != trump_suit:
-                new_moves.remove(move)
-        return new_moves
-
-    def getDifference(self, state):
-        bot = 0
-        opp = 0
-        if state.whose_turn() is 1:
-            bot = 1
-            opp = 2
-        else:
-            bot = 2
-            opp = 1
-
-        diff = state.get_points(bot) - state.get_points(opp)
-
-        if diff < 0:
-            return abs(diff)
-        else:
-            return 0
-

@@ -11,25 +11,34 @@ from api import State, util
 import sys
 import sklearn
 import sklearn.linear_model
+from sklearn.naive_bayes import GaussianNB
 from sklearn.externals import joblib
 
+from bots.marriagesaver import marriagesaver
+from bots.ml import ml
 from bots.rand import rand
 # from bots.rdeep import rdeep
 
 from bots.ml.ml import features
 
 # How many games to play
+from bots.rdeep import rdeep
+from bots.ultra import ultra
+from bots.ultrahigh import ultrahigh
+
 GAMES = 10000
 
 # Which phase the game starts in
 PHASE = 1
 
 # The player we'll observe
-player = rand.Bot()
-# player = rdeep.Bot()
+player1 = ultrahigh.Bot()
+player2 = ultra.Bot()
 
 data = []
 target = []
+
+alt = 1
 
 for g in range(GAMES):
 
@@ -37,6 +46,12 @@ for g in range(GAMES):
     state = State.generate(phase=PHASE)
 
     state_vectors = []
+    if alt == 1:
+        player = player1
+        alt = 2
+    else:
+        player = player2
+        alt = 1
 
     while not state.finished():
 
@@ -70,7 +85,8 @@ for g in range(GAMES):
         print('game {} finished ({}%)'.format(g, (g/float(GAMES)*100)))
 
 # Train a logistic regression model
-learner = sklearn.linear_model.LogisticRegression()
+# learner = sklearn.linear_model.LogisticRegression()
+learner = sklearn.naive_bayes.GaussianNB()
 model = learner.fit(data, target)
 
 # Check for class imbalance

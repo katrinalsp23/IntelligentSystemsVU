@@ -20,6 +20,7 @@ def run_tournament(options):
 
     n = len(bots)
     wins = [0] * len(bots)
+    points = [0] * len(bots)
     matches = [(p1, p2) for p1 in range(n) for p2 in range(n) if p1 < p2]
 
     totalgames = (n*n - n)/2 * options.repeats
@@ -41,15 +42,19 @@ def run_tournament(options):
 
             #TODO: ALSO IMPLEMENT POINTS FOR WINNING
             if winner is not None:
+                _, temp_points = winner
                 winner = p[winner[0] - 1]
                 wins[winner] += 1
+                points[winner] += temp_points
+
 
             playedgames += 1
             print('Played {} out of {:.0f} games ({:.0f}%): {} \r'.format(playedgames, totalgames, playedgames/float(totalgames) * 100, wins))
 
     print('Results:')
     for i in range(len(bots)):
-        print('    bot {}: {} wins'.format(bots[i], wins[i]))
+        print('    bot {}: {} wins, {} points'.format(bots[i], wins[i], points[i]))
+
 
 
 if __name__ == "__main__":

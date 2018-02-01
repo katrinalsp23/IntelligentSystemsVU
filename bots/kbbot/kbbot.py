@@ -9,7 +9,7 @@ from load.py.
 """
 
 from api import State, util
-import random, load
+import random, load, PlayCard
 
 from kb import KB, Boolean, Integer
 
@@ -30,7 +30,7 @@ class Bot:
                 # Plays the first move that makes the kb inconsistent. We do not take
                 # into account that there might be other valid moves according to the strategy.
                 # Uncomment the next line if you want to see that something happens.
-                # print "Strategy Applied"
+                print "Strategy Applied"
                 return move
 
         # If no move that is entailed by the kb is found, play random move
@@ -45,10 +45,10 @@ class Bot:
         kb = KB()
 
         # Add general information about the game
-        load.general_information(kb)
+        PlayCard.general_information(kb)
 
         # Add the necessary knowledge about the strategy
-        load.strategy_knowledge(kb)
+        PlayCard.strategy_knowledge(kb)
 
         # This line stores the index of the card in the deck.
         # If this doesn't make sense, refer to _deck.py for the card index mapping
